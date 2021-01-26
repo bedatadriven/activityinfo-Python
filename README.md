@@ -15,7 +15,7 @@ Activate the virtual environment:
 source venv/bin/activate
 ```
 
-Install the codule's requirements using `pip`:
+Install the module's requirements using `pip`:
 ```commandline
 python3 -m pip install -r requirements.txt 
 ```
