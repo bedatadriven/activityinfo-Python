@@ -1,5 +1,6 @@
 import requests
 
+
 class Client:
     """Client to interact with the ActivityInfo API."""
 
