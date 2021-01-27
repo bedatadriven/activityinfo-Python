@@ -25,4 +25,4 @@ class Client:
         r.raise_for_status()
         return r.json()
 
-    # TODO: put().
+    # TODO: post().
