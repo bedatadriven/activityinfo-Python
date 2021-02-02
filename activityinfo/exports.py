@@ -1,20 +1,56 @@
+import csv
 import os
 import shutil
 import time
-
 import requests
+
+
+class ExportDatabaseFormsResult:
+    """Class to store data exported from ActivityInfo"""
+
+    def __init__(self, header, records, job_id, database_id, resource_id=None):
+        self.jobId = job_id
+        self.databaseId = database_id,
+        self.resourceId = resource_id,
+        self.header = header
+        self.records = records
+
+    def to_dict(self):
+        """Convert exported results to a list of dictionaries
+
+        :return: A list of dictionaries. The keys are the column/field names.
+        """
+        return [dict(zip(self.header, record)) for record in self.records]
+
+    def to_csv(self, filename, delimiter=',', quotechar='"'):
+        """Write exported results to a CSV file
+
+        :param filename: Full path of the file to be written to.
+        :param delimiter: Character to use as the delimiter.
+        :param quotechar: Character to use to quote non-numeric values.
+        :return: The ``filename``.
+        """
+        with open(filename, 'w', newline='') as csvfile:
+            writer = csv.writer(csvfile, delimiter=delimiter, quotechar=quotechar, quoting=csv.QUOTE_NONNUMERIC)
+            writer.writerow(self.header)
+            writer.writerows(self.records)
+
+        return filename
+
+    def __str__(self):
+        msg = 'ExportDatabaseFormsResult object with {ncol} columns and {nrow} records'
+        return msg.format(ncol=len(self.header), nrow=len(self.records))
 
 
 def get_quantity_table(client, database_id, resource_id=None, record_filter=None, delete=True):
     """Export a database, folder, or form in long format.
 
-    :param client: A :class:`activityinfo.client.Client` object.
+    :param client: A :class:`Client` object.
     :param database_id: Database identifier (required).
     :param resource_id: Form or folder identifier (optional).
     :param record_filter: A formula that is applied to each form to filter the resulting records.
     :param delete: If True, then the temporary file on the local file system is deleted before the function returns.
-    :return: A dictionary with two fields: ``header`` which is a list of column names and ``records`` which is a list of
-    lists. Each list contains the values of a single record.
+    :return: A :class:`ExportDatabaseFormsResult` object.
     """
     if resource_id is None:
         parent_id = database_id
@@ -55,7 +91,13 @@ def get_quantity_table(client, database_id, resource_id=None, record_filter=None
     if delete is True:
         os.remove(local_filename)
 
-    return {'header': header, 'records': records}
+    return ExportDatabaseFormsResult(
+        header=header,
+        records=records,
+        job_id=job_status['id'],
+        database_id=database_id,
+        resource_id=resource_id
+    )
 
 
 def download_file(client, url, filename=None):
