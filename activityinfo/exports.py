@@ -75,8 +75,11 @@ def get_quantity_table(client, database_id, resource_id=None, record_filter=None
         job_status = client.get_resource('resources/jobs/{job_id}'.format(job_id=job_id))
         if job_status['state'].lower() == 'completed':
             break
+        if job_status['state'].lower() == 'failed':
+            msg_body = 'An error occurred on the server for job {id}: {error_msg}'
+            raise ValueError(msg_body.format(id=job_id, error_msg=job_status['error']['message']))
         if job_status['state'].lower() != 'started':
-            msg_body = 'Error exporting quantity table for job {id}; the job state is "{state}"'
+            msg_body = 'Error exporting quantity table for job {id}: the server returned unknown state "{state}"'
             raise ValueError(msg_body.format(id=job_id, state=job_status['state']))
         time.sleep(2)
 
