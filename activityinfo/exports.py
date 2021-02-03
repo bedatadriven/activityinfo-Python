@@ -38,8 +38,8 @@ class ExportDatabaseFormsResult:
         return filename
 
     def __str__(self):
-        msg = 'ExportDatabaseFormsResult object with {ncol} columns and {nrow} records'
-        return msg.format(ncol=len(self.header), nrow=len(self.records))
+        msg_body = 'ExportDatabaseFormsResult object with {ncol} columns and {nrow} records'
+        return msg_body.format(ncol=len(self.header), nrow=len(self.records))
 
 
 def get_quantity_table(client, database_id, resource_id=None, record_filter=None, delete=True):
@@ -69,13 +69,15 @@ def get_quantity_table(client, database_id, resource_id=None, record_filter=None
         payload['descriptor']['filter'] = record_filter
 
     job_status = client.post_resource('resources/jobs', body=payload)
+    job_id = job_status['id']
 
     while True:
-        job_status = client.get_resource('resources/jobs/{job_id}'.format(job_id=job_status['id']))
-        if job_status['state'] == 'completed':
+        job_status = client.get_resource('resources/jobs/{job_id}'.format(job_id=job_id))
+        if job_status['state'].lower() == 'completed':
             break
-        if job_status['state'] != 'started':
-            raise ValueError('Error exporting quantity table')
+        if job_status['state'].lower() != 'started':
+            msg_body = 'Error exporting quantity table for job {id}; the job state is "{state}"'
+            raise ValueError(msg_body.format(id=job_id, state=job_status['state']))
         time.sleep(2)
 
     download_url = '{0}/{1}'.format(client.base_url, job_status['result']['downloadUrl'])
@@ -94,7 +96,7 @@ def get_quantity_table(client, database_id, resource_id=None, record_filter=None
     return ExportDatabaseFormsResult(
         header=header,
         records=records,
-        job_id=job_status['id'],
+        job_id=job_id,
         database_id=database_id,
         resource_id=resource_id
     )
